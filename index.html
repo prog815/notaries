@@ -318,7 +318,7 @@
   <div class="search-container">
     <div class="searchbar">
       <input id="q" type="text" autocomplete="off" spellcheck="false"
-             placeholder="Поиск по ФИО, регномеру, субъекту, округу..." title="Введите данные для поиска">
+             placeholder="Поиск по ФИО, регномеру, округу, адресу..." title="Введите данные для поиска">
       <select id="stage-filter" title="Фильтр по стадии">
         <option value="">Все стадии</option>
       </select>
@@ -614,11 +614,11 @@
       if (subjectVal && r.subject !== subjectVal) return false;
       if (statusVal && r.status !== statusVal) return false;
 
-      // Текстовый поиск (AND по токенам)
+      // Текстовый поиск (AND по токенам) — регион исключён
       if (tokens.length > 0) {
         var blob = normName(
           r.id + ' ' + r.regnum + ' ' + r.lastname + ' ' + r.firstname + ' ' + r.patronymic + ' ' +
-          r.fio + ' ' + r.subject + ' ' + r.district + ' ' + r.orgform + ' ' +
+          r.fio + ' ' + r.district + ' ' + r.orgform + ' ' +
           r.address + ' ' + r.phone + ' ' + r.email + ' ' + r.substitute_fio
         );
         for(var i=0; i<tokens.length; i++){
@@ -724,13 +724,13 @@
     
     // Бейдж стадии
     var stageClass = (r.stage === 'Нотариус') ? 'stage-badge' : 'stage-examinee';
-    var stageBadge = r.stage ? '<span class="status-badge ' + stageClass + '">' + esc(r.stage) + '</span>' : '';
+    var stageBadge = r.stage ? '<span class="status-badge ' + stageClass + '" title="Стадия: ' + esc(r.stage) + '">' + esc(r.stage) + '</span>' : '';
     
     // Бейдж статуса
     var statusClass = 'status-terminated';
     if (r.status === 'Действующий') statusClass = 'status-active';
     else if (r.status === 'Полномочия приостановлены') statusClass = 'status-suspended';
-    var statusBadge = r.status ? '<span class="status-badge ' + statusClass + '">' + esc(r.status) + '</span>' : '';
+    var statusBadge = r.status ? '<span class="status-badge ' + statusClass + '" title="Статус: ' + esc(r.status) + '">' + esc(r.status) + '</span>' : '';
 
     // Копирование всех 17 полей
     var copyStr = [
@@ -767,19 +767,19 @@
             '</div>';
     }
 
-    return '<article class="card' + (isHighlight ? ' highlight' : '') + '" title="' + esc(r.fio) + '">' +
+    return '<article class="card' + (isHighlight ? ' highlight' : '') + '" title="Карточка нотариуса: ' + esc(r.fio) + '">' +
       '<div class="row1">' +
-        '<span class="id-badge" data-id="' + r.id + '" title="Кликните, чтобы скопировать уникальный идентификатор: ' + r.id + '">' + idHtml + '</span>' +
+        '<span class="id-badge" data-copy="' + r.id + '" title="Уникальный ID записи. Кликните, чтобы скопировать">' + idHtml + '</span>' +
         stageBadge +
         statusBadge +
-        '<span class="id-badge" title="Регистрационный номер">' + regNumHtml + '</span>' +
+        '<span class="id-badge" data-copy="' + esc(r.regnum) + '" title="Регистрационный номер. Кликните, чтобы скопировать">' + regNumHtml + '</span>' +
       '</div>' +
       '<div class="name">' + titleHtml + '</div>' +
       '<div class="details-grid">' + details.join('') + '</div>' +
       substituteHtml +
       contactHtml +
       '<div class="actions">' +
-        '<button type="button" class="action-btn btn-copy-row" data-str="' + esc(copyStr) + '" title="Скопировать одной строкой" aria-label="Скопировать строку с данными">📋 строка</button>' +
+        '<button type="button" class="action-btn btn-copy-row" data-str="' + esc(copyStr) + '" title="Скопировать все данные одной строкой" aria-label="Скопировать строку с данными">📋 строка</button>' +
         '<div class="share-slot" data-id="' + r.id + '" data-name="' + esc(r.fio) + '">' +
           '<button type="button" class="action-btn btn-share-fallback" data-id="' + r.id + '" data-name="' + esc(r.fio) + '" title="Поделиться этой записью" aria-label="Поделиться записью">📤 Поделиться</button>' +
         '</div>' +
@@ -830,13 +830,15 @@
   els.results.addEventListener('click', function(ev){
     var idBadge = ev.target.closest('.id-badge');
     if(idBadge) {
-      var id = idBadge.getAttribute('data-id');
-      navigator.clipboard.writeText(id).then(function(){
-        showToast('Скопировано: ' + id);
-        try { if (window.ym) window.ym(105817342, 'reachGoal', 'notaries_copy_id'); } catch (e) {}
-        try { if (window.gtag) window.gtag('event', 'copy_id', { id: id }); } catch (e) {}
-      });
-      return;
+      var copyVal = idBadge.getAttribute('data-copy');
+      if (copyVal) {
+        navigator.clipboard.writeText(copyVal).then(function(){
+          showToast('Скопировано: ' + copyVal);
+          try { if (window.ym) window.ym(105817342, 'reachGoal', 'notaries_copy_id'); } catch (e) {}
+          try { if (window.gtag) window.gtag('event', 'copy_id', { id: copyVal }); } catch (e) {}
+        });
+        return;
+      }
     }
 
     var btnCopy = ev.target.closest('.btn-copy-row');
