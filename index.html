@@ -741,7 +741,10 @@
 
     var details = [];
     if (r.regnum) details.push('<div><span class="lbl">Рег. номер:</span> <span class="val">' + highlight(r.regnum, queryTokens) + '</span></div>');
-    if (r.subject) details.push('<div><span class="lbl">Субъект РФ:</span> <span class="val">' + highlight(r.subject, queryTokens) + '</span></div>');
+    
+    // Для subject, stage и status отключаем highlight, так как они фильтруются через select
+    if (r.subject) details.push('<div><span class="lbl">Субъект РФ:</span> <span class="val">' + esc(r.subject) + '</span></div>');
+    
     if (r.district) details.push('<div><span class="lbl">Нотариальный округ:</span> <span class="val">' + highlight(r.district, queryTokens) + '</span></div>');
     if (r.orgform) details.push('<div><span class="lbl">Орг. форма:</span> <span class="val">' + highlight(r.orgform, queryTokens) + '</span></div>');
 
