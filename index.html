@@ -112,7 +112,7 @@
   .searchbar select {
     font-size:16px; padding:12px 16px; border:1px solid var(--line);
     border-radius:var(--radius); background:var(--panel); color:var(--ink);
-    outline:none; cursor:pointer; max-width:200px;
+    outline:none; cursor:pointer; max-width:180px;
   }
   .searchbar select:focus { border-color:var(--brand); }
 
@@ -322,6 +322,9 @@
       <select id="stage-filter" title="Фильтр по стадии">
         <option value="">Все стадии</option>
       </select>
+      <select id="subject-filter" title="Фильтр по субъекту РФ">
+        <option value="">Все субъекты</option>
+      </select>
       <select id="status-filter" title="Фильтр по статусу">
         <option value="">Все статусы</option>
       </select>
@@ -400,6 +403,7 @@
   var els = {
     q: document.getElementById('q'),
     stageFilter: document.getElementById('stage-filter'),
+    subjectFilter: document.getElementById('subject-filter'),
     statusFilter: document.getElementById('status-filter'),
     clearAll: document.getElementById('clear-all'),
     count: document.getElementById('count'),
@@ -482,9 +486,10 @@
   function updateClearVisibility() {
     var hasQuery = String(els.q.value || '').length > 0;
     var hasStage = String(els.stageFilter.value || '').length > 0;
+    var hasSubject = String(els.subjectFilter.value || '').length > 0;
     var hasStatus = String(els.statusFilter.value || '').length > 0;
     var hasCode = !!activeDeepLinkCode;
-    els.clearAll.style.display = (hasQuery || hasStage || hasStatus || hasCode) ? 'block' : 'none';
+    els.clearAll.style.display = (hasQuery || hasStage || hasSubject || hasStatus || hasCode) ? 'block' : 'none';
   }
 
   async function boot(){
@@ -549,6 +554,16 @@
         }
       }
 
+      // Заполняем фильтр субъектов РФ из данных (так как в meta subject.type = text, values пустой)
+      var subjects = Array.from(new Set(DATA.map(function(r){ return r.subject; }).filter(Boolean)));
+      subjects.sort(function(a, b){ return a.localeCompare(b, 'ru'); });
+      for (var k = 0; k < subjects.length; k++) {
+        var opt3 = document.createElement('option');
+        opt3.value = subjects[k];
+        opt3.textContent = subjects[k];
+        els.subjectFilter.appendChild(opt3);
+      }
+
       stopLoadingTicker();
       els.status.style.display = 'none';
 
@@ -590,11 +605,13 @@
     var query = normName(els.q.value);
     var tokens = query.split(' ').filter(Boolean);
     var stageVal = els.stageFilter.value;
+    var subjectVal = els.subjectFilter.value;
     var statusVal = els.statusFilter.value;
 
     view.list = DATA.filter(function(r){
       // Фильтры (жёсткое совпадение)
       if (stageVal && r.stage !== stageVal) return false;
+      if (subjectVal && r.subject !== subjectVal) return false;
       if (statusVal && r.status !== statusVal) return false;
 
       // Текстовый поиск (AND по токенам)
@@ -784,6 +801,12 @@
     runSearch();
   });
 
+  els.subjectFilter.addEventListener('change', function(){
+    activeDeepLinkCode = null;
+    clearCodeFromUrl();
+    runSearch();
+  });
+
   els.statusFilter.addEventListener('change', function(){
     activeDeepLinkCode = null;
     clearCodeFromUrl();
@@ -793,6 +816,7 @@
   function clearAllAction() {
     els.q.value = '';
     els.stageFilter.value = '';
+    els.subjectFilter.value = '';
     els.statusFilter.value = '';
     activeDeepLinkCode = null;
     clearCodeFromUrl();
